@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card-Based Elo Rating System</title>
+<style>
+  body {
+	font-family: Arial, sans-serif;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	height: 100vh;
+	margin: 0;
+  }
+  .card-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+  }
+  .card {
+	border: 1px solid #333;
+	padding: 20px;
+	margin: 10px;
+	background-color: white;
+  }
+  h3 {
+	margin: 10px 0;
+  }
+  button {
+	margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="card-container" id="cardContainer">
+  <!-- Cards will be dynamically added here -->
+</div>
+
+<h3>Elo Ratings and Stats:</h3>
+<div id="eloContainer">
+  <!-- Elo ratings, win count, and loss count will be dynamically added here -->
+</div>
+
+<script>
+  const colors = [
+	"Red", "Green", "Blue", "Yellow", "Orange", "Purple", "White", "Black", "Brown", "Teal", "Indigo"
+  ];
+
+  let eloRatings = Array.from({ length: colors.length }, () => 1000);
+  let roundsWon = Array.from({ length: colors.length }, () => 0);
+  let roundsLost = Array.from({ length: colors.length }, () => 0);
+  let matchesCompleted = 0;
+  let currentMatchIndex = 0;
+  const totalMatches = (colors.length * (colors.length - 1)) / 2;
+
+  function updateElo(winnerIndex, loserIndex) {
+	const k = 32;
+	const expectedWinner = 1 / (1 + 10 ** ((eloRatings[loserIndex] - eloRatings[winnerIndex]) / 400));
+	const expectedLoser = 1 / (1 + 10 ** ((eloRatings[winnerIndex] - eloRatings[loserIndex]) / 400));
+
+	eloRatings[winnerIndex] += k * (1 - expectedWinner);
+	eloRatings[loserIndex] += k * (0 - expectedLoser);
+  }
+
+  function sortEloAndDisplayStats() {
+	const sortedIndices = eloRatings.map((_, index) => index).sort((a, b) => eloRatings[b] - eloRatings[a]);
+	const eloContainer = document.getElementById("eloContainer");
+	eloContainer.innerHTML = "";
+
+	for (const index of sortedIndices) {
+	  const cardName = colors[index];
+	  const eloRating = eloRatings[index].toFixed(2);
+	  const roundsWonCount = roundsWon[index];
+	  const roundsLostCount = roundsLost[index];
+
+	  const eloAndStatsElement = document.createElement("h3");
+	  eloAndStatsElement.innerHTML = `${cardName}: Elo <span>${eloRating}</span> | Won ${roundsWonCount} rounds, Lost ${roundsLostCount} rounds`;
+	  eloContainer.appendChild(eloAndStatsElement);
+	}
+  }
+
+  function createMatchButtons() {
+	const cardContainer = document.getElementById("cardContainer");
+	cardContainer.innerHTML = "";
+
+	const matchContainer = document.createElement("div");
+	matchContainer.className = "match-container";
+
+	const currentCardIndex = currentMatchIndex % colors.length;
+	const currentCard = colors[currentCardIndex];
+
+	const cardElement1 = document.createElement("div");
+	cardElement1.className = "card";
+	cardElement1.textContent = currentCard;
+
+	const opponentCardIndex = (currentMatchIndex + Math.floor(colors.length / 2)) % colors.length;
+	const opponentCard = colors[opponentCardIndex];
+
+	const cardElement2 = document.createElement("div");
+	cardElement2.className = "card";
+	cardElement2.textContent = opponentCard;
+
+	const winButton1 = document.createElement("button");
+	winButton1.textContent = "Win";
+	winButton1.addEventListener("click", () => matchCards(currentCardIndex, opponentCardIndex));
+	cardElement1.appendChild(winButton1);
+
+	const winButton2 = document.createElement("button");
+	winButton2.textContent = "Win";
+	winButton2.addEventListener("click", () => matchCards(opponentCardIndex, currentCardIndex));
+	cardElement2.appendChild(winButton2);
+
+	matchContainer.appendChild(cardElement1);
+	matchContainer.appendChild(cardElement2);
+	cardContainer.appendChild(matchContainer);
+  }
+
+  function matchCards(winnerIndex, loserIndex) {
+	updateElo(winnerIndex, loserIndex);
+	roundsWon[winnerIndex]++;
+	roundsLost[loserIndex]++;
+	sortEloAndDisplayStats();
+
+	currentMatchIndex++;
+	if (currentMatchIndex < totalMatches) {
+	  createMatchButtons();
+	} else {
+	  alert("All matches completed!");
+	}
+  }
+
+  // Initial setup: create the first match
+  createMatchButtons();
+  sortEloAndDisplayStats();
+</script>
+</body>
+</html>
